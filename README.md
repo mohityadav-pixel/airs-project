@@ -68,7 +68,9 @@ cp .env.example .env          # then fill in your keys — see below
 Open **http://localhost:5173**. API docs are at **http://localhost:8000/docs**.
 
 `dev.sh` creates the virtualenv, installs both dependency trees, initialises the
-database and starts both servers. To do it by hand:
+database and starts both servers. **The first run takes 3-6 minutes** — it is
+downloading numpy, pandas and scikit-learn; later runs skip straight to the
+servers. To do it by hand:
 
 ```bash
 python3 -m venv .venv
