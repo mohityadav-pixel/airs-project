@@ -44,6 +44,19 @@ exactly what the model was allowed to see.
 
 ---
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Citizen dashboard](docs/screenshots/dashboard.png) | ![City Command Center](docs/screenshots/command-center.png) |
+| **Citizen dashboard** — current AQI, health guidance, forecast, source split, map and recommended actions, each carrying its provenance badge. | **City Command Center** — zones ranked by intervention priority, with the dominant source, the best available lever and its modelled benefit. |
+
+![AQI forecast and model card](docs/screenshots/predictions.png)
+
+*Forecast page: 6/24/72-hour horizons with 80% prediction intervals, the plain-language explanation, and the model card showing held-out skill against a persistence baseline. Captured in demo mode — hence the banner.*
+
+---
+
 ## Quick start
 
 ```bash
