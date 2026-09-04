@@ -16,6 +16,47 @@ import { api } from '@/lib/api'
 import { POLLUTANT_LABEL, SEVERITY_STYLE, ZONE_LABEL } from '@/lib/aqi'
 import { compactNumber, num, relativeTime } from '@/lib/format'
 import { useSelection } from '@/lib/selection'
+import type { HealthAdvisory } from '@/lib/types'
+
+
+/**
+ * On a phone the citizen's second question — after "how bad is it?" — is "what
+ * should I do?", so this card sits directly under the AQI dial on small
+ * screens and moves to the analysis column on wide ones.
+ */
+function HealthCard({ advisory }: { advisory: HealthAdvisory | undefined }) {
+  if (!advisory?.available) return null
+  return (
+    <div className="card card-pad order-1 lg:order-4">
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Health guidance</h2>
+          <p className="text-2xs text-faint">{advisory.group_label}</p>
+        </div>
+        <span className="chip capitalize">{advisory.risk_level} risk</span>
+      </div>
+      <dl className="grid gap-2.5 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        {([['Outdoors', advisory.outdoor_activity],
+           ['Exercise', advisory.exercise],
+           ['Mask', advisory.mask],
+           ['Ventilation', advisory.ventilation]] as const).map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-2xs font-medium uppercase tracking-wide text-faint">
+              {label}</dt>
+            <dd className="mt-0.5 leading-relaxed text-muted">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {advisory.notes?.length ? (
+        <p className="mt-3 rounded-lg bg-raised px-2.5 py-2 text-2xs leading-relaxed
+                      text-muted">{advisory.notes[0]}</p>
+      ) : null}
+      <p className="mt-3 border-t border-line pt-2.5 text-2xs text-faint">
+        {advisory.disclaimer}
+      </p>
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { citySlug, stationId, setStation, city } = useSelection()
@@ -111,7 +152,9 @@ export default function Dashboard() {
         </div>
 
         <div className="grid content-start gap-4">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <HealthCard advisory={advisory.data} />
+
+          <div className="order-2 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile label="City average"
               value={summary.data ? num(summary.data.average_aqi, 0) : '—'}
               unit="AQI"
@@ -140,7 +183,7 @@ export default function Dashboard() {
           </div>
 
           {alerts.data && alerts.data.length > 0 && (
-            <div className="card card-pad">
+            <div className="card card-pad order-3">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-ink">Active alerts</h2>
                 <span className="chip">{alerts.data.length}</span>
@@ -169,7 +212,7 @@ export default function Dashboard() {
           )}
 
           {prediction.data?.explanation && (
-            <div className="card card-pad">
+            <div className="card card-pad order-4 lg:order-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <h2 className="text-sm font-semibold text-ink">
                   {prediction.data.explanation.headline}
@@ -251,9 +294,9 @@ export default function Dashboard() {
         ) : null}
       </section>
 
-      <section className="mt-4 grid gap-4 lg:grid-cols-3">
+      <section className="mt-4">
         {aq && aq.pollutants.length > 0 && (
-          <div className="lg:col-span-2">
+          <div>
             <ChartFrame title="Pollutants, compared on AQI sub-index"
                         subtitle="The only scale on which µg/m³ and ppb are comparable"
                         provenance={aq.provenance}>
@@ -295,39 +338,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {advisory.data?.available && (
-          <div className="card card-pad">
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div>
-                <h2 className="text-sm font-semibold text-ink">Health guidance</h2>
-                <p className="text-2xs text-faint">{advisory.data.group_label}</p>
-              </div>
-              <span className="chip capitalize">{advisory.data.risk_level} risk</span>
-            </div>
-            <dl className="space-y-2.5 text-xs">
-              {([['Outdoors', advisory.data.outdoor_activity],
-                 ['Exercise', advisory.data.exercise],
-                 ['Mask', advisory.data.mask],
-                 ['Ventilation', advisory.data.ventilation]] as const).map(
-                ([label, value]) => (
-                  <div key={label}>
-                    <dt className="text-2xs font-medium uppercase tracking-wide
-                                   text-faint">{label}</dt>
-                    <dd className="mt-0.5 leading-relaxed text-muted">{value}</dd>
-                  </div>
-                ))}
-            </dl>
-            {advisory.data.notes && advisory.data.notes.length > 0 && (
-              <p className="mt-3 rounded-lg bg-raised px-2.5 py-2 text-2xs
-                            leading-relaxed text-muted">
-                {advisory.data.notes[0]}
-              </p>
-            )}
-            <p className="mt-3 border-t border-line pt-2.5 text-2xs text-faint">
-              {advisory.data.disclaimer}
-            </p>
-          </div>
-        )}
       </section>
 
       {/* ── Map + actions ── */}

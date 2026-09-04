@@ -136,6 +136,11 @@ def command_center(city: str | None = None, db: Session = Depends(get_db),
                        "so it works in both a clean city and a polluted one.",
             "best_lever": "The intervention with the largest modelled AQI benefit "
                           "at a 30% magnitude, given this station's estimated "
-                          "source mix.",
+                          "source mix. When the dominant estimated source is "
+                          "weather and stagnation, no local lever can remove it — "
+                          "the best lever then targets the largest actionable "
+                          "source instead, and its modelled benefit is "
+                          "correspondingly small. That is a real finding, not a "
+                          "gap: it says the episode is meteorological.",
         },
     }
