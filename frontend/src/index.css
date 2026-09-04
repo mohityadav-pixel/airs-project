@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  AIRS design tokens.
+
+  Light is the default and dark is opt-in via a `dark` class on <html>, so the
+  theme survives a page reload without a flash (see main.tsx). Every colour the
+  UI and the charts use resolves through these variables — nothing hard-codes a
+  hex outside the AQI category scale, which is fixed by the EPA and must look
+  identical in both themes.
+*/
+:root {
+  --c-canvas: 246 247 249;
+  --c-surface: 255 255 255;
+  --c-raised: 250 251 252;
+  --c-line: 226 231 237;
+  --c-ink: 15 27 38;
+  --c-muted: 90 105 120;
+  --c-faint: 138 152 166;
+  --c-brand: 13 148 136;
+  --c-brand-soft: 204 241 236;
+  --c-brand-deep: 6 78 79;
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: 6 15 24;
+  --c-surface: 12 24 36;
+  --c-raised: 17 32 46;
+  --c-line: 31 50 68;
+  --c-ink: 231 240 248;
+  --c-muted: 148 168 187;
+  --c-faint: 104 126 147;
+  --c-brand: 45 212 191;
+  --c-brand-soft: 8 51 55;
+  --c-brand-deep: 153 246 228;
+  color-scheme: dark;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  @apply bg-canvas text-ink antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
+}
+
+/* Tabular figures everywhere a number can change under the reader's eye. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+::selection { background: rgb(var(--c-brand) / 0.24); }
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--c-brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-2xl shadow-card;
+  }
+  .card-pad { @apply p-4 sm:p-5; }
+
+  .label-eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-widest text-faint;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+           text-sm font-medium transition-colors disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand/90; }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:bg-raised;
+  }
+  .btn-subtle { @apply btn text-muted hover:text-ink hover:bg-raised; }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm
+           text-ink placeholder:text-faint focus:border-brand focus:outline-none
+           focus:ring-2 focus:ring-brand/25;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line
+           bg-raised px-2.5 py-1 text-2xs font-medium text-muted;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-line/60;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background-image: linear-gradient(90deg, transparent,
+      rgb(var(--c-surface) / 0.55), transparent);
+  }
+}
+
+/* Leaflet needs a couple of overrides to sit inside the design system. */
+.leaflet-container {
+  background: rgb(var(--c-raised));
+  font-family: inherit;
+}
+.leaflet-control-attribution {
+  background: rgb(var(--c-surface) / 0.86) !important;
+  color: rgb(var(--c-faint)) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: rgb(var(--c-muted)) !important; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: rgb(var(--c-surface)) !important;
+  color: rgb(var(--c-ink)) !important;
+  border: 1px solid rgb(var(--c-line));
+  box-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.5) !important;
+}
+.leaflet-popup-content { margin: 0 !important; }
+.dark .leaflet-tile { filter: brightness(0.72) contrast(1.08) saturate(0.85); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+  Chart tokens.
+
+  The categorical order is fixed and never cycled: identity is bound to the
+  entity, so filtering a series out never repaints the survivors. Both modes were
+  validated (lightness band, chroma floor, CVD separation, normal-vision floor,
+  contrast) against the AIRS surfaces — not flipped automatically from light.
+  Three light-mode slots sit below 3:1 on white, so every categorical chart in
+  AIRS ships direct value labels rather than relying on the swatch alone.
+*/
+:root {
+  --viz-surface: 255 255 255;
+  --viz-grid: 226 231 237;
+  --viz-axis: 137 135 129;
+  --viz-ink: 15 27 38;
+  --viz-1: 42 120 214;   /* blue    */
+  --viz-2: 235 104 52;   /* orange  */
+  --viz-3: 27 175 122;   /* aqua    */
+  --viz-4: 237 161 0;    /* yellow  */
+  --viz-5: 232 123 164;  /* magenta */
+  --viz-6: 0 131 0;      /* green   */
+  --viz-band: 42 120 214;
+}
+
+.dark {
+  --viz-surface: 12 24 36;
+  --viz-grid: 31 50 68;
+  --viz-axis: 137 135 129;
+  --viz-ink: 231 240 248;
+  --viz-1: 57 135 229;
+  --viz-2: 217 89 38;
+  --viz-3: 25 158 112;
+  --viz-4: 201 133 0;
+  --viz-5: 213 81 129;
+  --viz-6: 0 131 0;
+  --viz-band: 57 135 229;
+}

@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.local
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+myenv/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.log
+
+# Data & artifacts
+data/*.csv
+data/*.sqlite3
+data/*.db
+backend/ml/artifacts/*.joblib
+backend/ml/artifacts/*.json
+
+# OS
+.DS_Store

@@ -1,0 +1,52 @@
+# Production-shaped local stack: PostgreSQL + the AIRS API + the built frontend.
+#
+#   cp .env.example .env   # fill in your keys
+#   docker compose up --build
+#
+# The API waits for Postgres to be healthy, creates its schema and seeds the
+# reference data on startup.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airs
+      POSTGRES_PASSWORD: airs
+      POSTGRES_DB: airs
+    volumes:
+      - airs-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airs -d airs"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://airs:airs@db:5432/airs
+      AIRS_CORS_ORIGINS: http://localhost:5173,http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/ml/artifacts:/app/backend/ml/artifacts
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  airs-db:
