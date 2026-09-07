@@ -22,6 +22,8 @@ dist/
 # Data & artifacts
 data/*.csv
 data/*.sqlite3
+data/*.sqlite3-wal
+data/*.sqlite3-shm
 data/*.db
 data/*.tgz
 frontend/.legacy-pages/
@@ -30,3 +32,6 @@ backend/ml/artifacts/*.json
 
 # OS
 .DS_Store
+
+# Parked stale git lock files
+.git/_stale/
