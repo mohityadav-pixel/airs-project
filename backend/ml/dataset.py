@@ -50,8 +50,10 @@ def station_records(db: Session, station_id: int, *, days: int = 180,
 
 def station_context(db: Session, station: Station) -> dict:
     city = db.get(City, station.city_id)
-    baseline = {"delhi": 150.0, "mumbai": 90.0, "pune": 85.0,
-                "bengaluru": 75.0}.get(city.slug if city else "", 90.0)
+    # The model gets the city's own pollution level as a feature, so a station
+    # in Shimla is not judged against Delhi's distribution.
+    from app.db.seed_data import CITY_BASELINES
+    baseline = CITY_BASELINES.get(city.slug if city else "", 50.0) * 1.6
     return {"zone": station.zone_type.value,
             "near_road": station.near_major_road,
             "near_industrial": station.near_industrial,

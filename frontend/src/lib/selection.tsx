@@ -48,9 +48,14 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const cities = citiesQuery.data ?? []
   const stations = useMemo(() => stationsQuery.data ?? [], [stationsQuery.data])
 
-  // Default to the first configured city once we know what exists.
+  // First visit lands on Delhi — the city this platform is most about, and the
+  // one with the full multi-station network. Alphabetical order would open on
+  // Agra, which tells a first-time visitor nothing.
   useEffect(() => {
-    if (!citySlug && cities.length) setCitySlug(cities[0].slug)
+    if (citySlug || !cities.length) return
+    const preferred = ['delhi', 'mumbai', 'bengaluru']
+      .find((slug) => cities.some((c) => c.slug === slug))
+    setCitySlug(preferred ?? cities[0].slug)
   }, [cities, citySlug])
 
   // A station from another city must not survive a city switch.

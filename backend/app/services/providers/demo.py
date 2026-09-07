@@ -26,11 +26,11 @@ from app.services.providers.base import (AirQualityObservation, TrafficObservati
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
-# Baseline annual-mean PM2.5 (ug/m3) by city — roughly matches published
-# CPCB annual averages, so the demo does not make Bengaluru look like Delhi.
-CITY_BASELINE_PM25 = {
-    "delhi": 95.0, "mumbai": 46.0, "pune": 38.0, "bengaluru": 32.0,
-}
+# Baseline annual-mean PM2.5 (ug/m3) per city, loaded from the seed table so
+# the national map shows the real geography of Indian air quality — the
+# Indo-Gangetic plain far worse than the coasts and the south — rather than one
+# uniform number everywhere.
+from app.db.seed_data import CITY_BASELINES as CITY_BASELINE_PM25  # noqa: E402
 
 ZONE_MULTIPLIER = {
     "traffic_corridor": 1.28, "industrial": 1.22, "commercial": 1.08,

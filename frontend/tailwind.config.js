@@ -18,7 +18,11 @@ export default {
         brand: {
           DEFAULT: 'rgb(var(--c-brand) / <alpha-value>)',
           soft: 'rgb(var(--c-brand-soft) / <alpha-value>)',
-        astro: 'rgb(var(--c-brand-deep) / <alpha-value>)',
+          deep: 'rgb(var(--c-brand-deep) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          soft: 'rgb(var(--c-accent-soft) / <alpha-value>)',
         },
         good: '#00A86B',
         moderate: '#F4C542',
@@ -41,7 +45,12 @@ export default {
         lift: '0 2px 4px rgb(0 0 0 / 0.06), 0 18px 40px -20px rgb(0 0 0 / 0.35)',
       },
       borderRadius: { xl: '0.875rem', '2xl': '1.125rem' },
+      maxWidth: { content: '1200px' },
       keyframes: {
+        'float-in': {
+          from: { opacity: '0', transform: 'translateY(12px) scale(0.98)' },
+          to: { opacity: '1', transform: 'none' },
+        },
         'fade-up': {
           from: { opacity: '0', transform: 'translateY(6px)' },
           to: { opacity: '1', transform: 'none' },
@@ -55,6 +64,7 @@ export default {
       },
       animation: {
         'fade-up': 'fade-up 260ms ease-out both',
+        'float-in': 'float-in 220ms cubic-bezier(0.2,0.9,0.3,1) both',
         shimmer: 'shimmer 1.6s infinite',
         'pulse-ring': 'pulse-ring 2.4s cubic-bezier(0.24,0,0.38,1) infinite',
       },

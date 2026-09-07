@@ -91,6 +91,22 @@ export const api = {
   summary: (city?: string) =>
     request<CitySummary>(`/air-quality/summary${qs({ city })}`),
   map: (city?: string) => request<MapResponse>(`/air-quality/map${qs({ city })}`),
+
+  india: (refresh = false) =>
+    request<{
+      cities: Array<{ slug: string; name: string; latitude: number
+        longitude: number; aqi: number | null
+        category: { key: string; label: string; color: string } | null
+        station_count: number; reporting: number
+        dominant_pollutant: string | null; observed_at: string | null }>
+      worst: Array<{ slug: string; name: string; aqi: number | null }>
+      cleanest: Array<{ slug: string; name: string; aqi: number | null }>
+      national_average: number | null
+      reporting_cities: number
+      total_cities: number
+      legend: Array<{ key: string; label: string; color: string }>
+      provenance: import('./types').Provenance
+    }>(`/air-quality/india${qs({ refresh })}`),
   history: (p: { city?: string; stationId?: number; hours?: number;
                  start?: string; end?: string }) =>
     request<HistoryResponse>(`/air-quality/history${qs({

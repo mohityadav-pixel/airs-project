@@ -163,3 +163,76 @@ def history(station_id: int | None = None, city: str | None = None,
     return HistoryResponse(station=assembly.station_out(station), points=points,
                            stats=stats,
                            provenance=assembly.provenance_for(rows[-1] if rows else None))
+
+@router.get("/india")
+def india_overview(refresh: bool = False, db: Session = Depends(get_db)) -> dict:
+    """Every configured Indian city with its latest AQI, for the national map.
+
+    Reads only what is already stored — refreshing 70 cities from upstream on a
+    page load would burn the API quota in minutes. Pass ``refresh=true`` to pull
+    the cities that have gone stale.
+    """
+    cities = repository.list_cities(db)
+    points = []
+    newest = None
+
+    for city in cities:
+        stations = repository.city_stations(db, city.id)
+        if refresh:
+            for station in stations[:1]:      # the representative receptor
+                try:
+                    ensure_fresh(db, city, station)
+                except Exception:
+                    db.rollback()
+        readings = repository.city_latest_readings(db, city.id)
+        values = [r.aqi for r in readings.values() if r.aqi is not None]
+        if values:
+            latest = max(readings.values(), key=lambda r: r.observed_at)
+            if newest is None or latest.observed_at > newest.observed_at:
+                newest = latest
+        average = mean(values)
+        category = assembly.category_out(average)
+        points.append({
+            "slug": city.slug, "name": city.name,
+            "latitude": city.latitude, "longitude": city.longitude,
+            "aqi": average,
+            "category": category.model_dump() if category else None,
+            "station_count": len(stations),
+            "reporting": len(values),
+            "dominant_pollutant": (max(readings.values(),
+                                       key=lambda r: r.aqi or 0).dominant_pollutant
+                                   if values else None),
+            "observed_at": (max(r.observed_at for r in readings.values())
+                            if readings else None),
+        })
+
+    ranked = sorted([p for p in points if p["aqi"] is not None],
+                    key=lambda p: p["aqi"], reverse=True)
+    return {
+        "cities": points,
+        "worst": ranked[:10],
+        "cleanest": list(reversed(ranked[-10:])) if ranked else [],
+        "national_average": mean([p["aqi"] for p in points]),
+        "reporting_cities": len(ranked),
+        "total_cities": len(points),
+        "legend": [c.model_dump() for c in assembly.legend()],
+        "provenance": assembly.provenance_for(newest).model_dump(),
+    }
+
+
+@router.get("/search")
+def search_cities(q: str = Query(min_length=1, max_length=60),
+                  limit: int = Query(default=8, ge=1, le=25),
+                  db: Session = Depends(get_db)) -> list[dict]:
+    """Type-ahead over the configured city list."""
+    needle = q.strip().lower()
+    matches = []
+    for city in repository.list_cities(db):
+        name = city.name.lower()
+        if needle in name or needle in city.slug:
+            # Prefix matches rank above substring matches.
+            matches.append((0 if name.startswith(needle) else 1, city))
+    matches.sort(key=lambda pair: (pair[0], pair[1].name))
+    return [{"slug": c.slug, "name": c.name, "latitude": c.latitude,
+             "longitude": c.longitude}
+            for _, c in matches[:limit]]

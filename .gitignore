@@ -23,6 +23,8 @@ dist/
 data/*.csv
 data/*.sqlite3
 data/*.db
+data/*.tgz
+frontend/.legacy-pages/
 backend/ml/artifacts/*.joblib
 backend/ml/artifacts/*.json
 

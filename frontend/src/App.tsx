@@ -1,27 +1,30 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
+import { ChatWidget } from '@/components/ChatWidget'
 import { CardSkeleton } from '@/components/State'
 import { AppShell } from '@/layouts/AppShell'
 import { useAuth } from '@/lib/auth'
 import type { Role } from '@/lib/types'
-import Landing from '@/pages/Landing'
+import Home from '@/pages/Home'
 
-// Route-level code splitting: the landing page must not download the map, the
-// charting library and the command centre before it can paint.
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const MapPage = lazy(() => import('@/pages/MapPage'))
-const Predictions = lazy(() => import('@/pages/Predictions'))
-const Analytics = lazy(() => import('@/pages/Analytics'))
+// The one-page dashboard is the product; the two working tools stay as their
+// own routes because nobody wants a simulator to scroll past them.
 const Simulator = lazy(() => import('@/pages/Simulator'))
-const Copilot = lazy(() => import('@/pages/Copilot'))
 const CommandCenter = lazy(() => import('@/pages/CommandCenter'))
 const Login = lazy(() => import('@/pages/Login'))
 const Register = lazy(() => import('@/pages/Register'))
-const NotFound = lazy(() => import('@/pages/NotFound'))
 
-function RequireRole({ role, children }:
-  { role: Role; children: React.ReactNode }) {
+function PageFallback() {
+  return (
+    <div className="mx-auto grid max-w-content gap-4 px-4 py-8 sm:px-6
+                    lg:grid-cols-3">
+      {[0, 1, 2].map((i) => <CardSkeleton key={i} lines={4} />)}
+    </div>
+  )
+}
+
+function RequireRole({ role, children }: { role: Role; children: React.ReactNode }) {
   const { user, loading, hasRole } = useAuth()
   const location = useLocation()
 
@@ -29,14 +32,13 @@ function RequireRole({ role, children }:
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
   if (!hasRole(role)) {
     return (
-      <div className="card card-pad mx-auto max-w-lg text-center">
-        <h2 className="text-base font-semibold text-ink">
-          You need the {role} role
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <h2 className="text-base font-bold text-ink">
+          This area needs the {role} role
         </h2>
         <p className="mt-2 text-sm text-muted">
-          The City Command Center is restricted to city officials and
-          administrators. Your account is currently a {user.role}. An
-          administrator can change this from the user list.
+          The Command Center is for city officials. Your account is a{' '}
+          {user.role}; an administrator can change that.
         </p>
       </div>
     )
@@ -44,37 +46,35 @@ function RequireRole({ role, children }:
   return <>{children}</>
 }
 
-function PageFallback() {
+function Padded({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} lines={4} />)}
-    </div>
-  )
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <AppShell>
-      <Suspense fallback={<PageFallback />}>{children}</Suspense>
-    </AppShell>
+    <div className="mx-auto max-w-content px-4 py-8 sm:px-6">{children}</div>
   )
 }
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/dashboard" element={<Shell><Dashboard /></Shell>} />
-      <Route path="/map" element={<Shell><MapPage /></Shell>} />
-      <Route path="/predictions" element={<Shell><Predictions /></Shell>} />
-      <Route path="/analytics" element={<Shell><Analytics /></Shell>} />
-      <Route path="/simulator" element={<Shell><Simulator /></Shell>} />
-      <Route path="/copilot" element={<Shell><Copilot /></Shell>} />
-      <Route path="/command-center" element={
-        <Shell><RequireRole role="official"><CommandCenter /></RequireRole></Shell>} />
-      <Route path="/login" element={<Shell><Login /></Shell>} />
-      <Route path="/register" element={<Shell><Register /></Shell>} />
-      <Route path="*" element={<Shell><NotFound /></Shell>} />
-    </Routes>
+    <AppShell>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/simulator" element={<Padded><Simulator /></Padded>} />
+          <Route path="/command-center" element={
+            <Padded>
+              <RequireRole role="official"><CommandCenter /></RequireRole>
+            </Padded>} />
+          <Route path="/login" element={<Padded><Login /></Padded>} />
+          <Route path="/register" element={<Padded><Register /></Padded>} />
+          {/* The old multi-page routes now live as sections of the one page. */}
+          <Route path="/dashboard" element={<Navigate to="/#live" replace />} />
+          <Route path="/map" element={<Navigate to="/#india" replace />} />
+          <Route path="/predictions" element={<Navigate to="/#forecast" replace />} />
+          <Route path="/analytics" element={<Navigate to="/#history" replace />} />
+          <Route path="/copilot" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+      <ChatWidget />
+    </AppShell>
   )
 }

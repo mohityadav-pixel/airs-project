@@ -3,39 +3,51 @@
 @tailwind utilities;
 
 /*
-  AIRS design tokens.
+  AIRS — "Sunrise" theme.
 
-  Light is the default and dark is opt-in via a `dark` class on <html>, so the
-  theme survives a page reload without a flash (see main.tsx). Every colour the
-  UI and the charts use resolves through these variables — nothing hard-codes a
-  hex outside the AQI category scale, which is fixed by the EPA and must look
-  identical in both themes.
+  Dark by default and dark by intent. The palette is a warm dark - charcoal
+  with a brown undertone rather than blue-black - so it stays in the same
+  "sunrise" family as the light theme instead of reading as a different
+  product. A light variant is one tap away on the toggle.
+
+  One deliberate collision was designed around. The requested brand colours
+  (amber, coral) sit almost exactly on top of two AQI band colours — EPA orange
+  #F08A24 "Unhealthy for Sensitive Groups" and red #E14B4B "Unhealthy". A
+  primary button the same colour as a pollution warning is a real hazard, so the
+  brand uses deeper, browner steps (terracotta and rose) that stay unmistakably
+  warm while never being confused for a health warning. AQI band colours are a
+  published standard: they are data, they are identical in both themes, and no
+  brand colour is allowed near them without a text label.
 */
 :root {
-  --c-canvas: 246 247 249;
-  --c-surface: 255 255 255;
-  --c-raised: 250 251 252;
-  --c-line: 226 231 237;
-  --c-ink: 15 27 38;
-  --c-muted: 90 105 120;
-  --c-faint: 138 152 166;
-  --c-brand: 13 148 136;
-  --c-brand-soft: 204 241 236;
-  --c-brand-deep: 6 78 79;
+  --c-canvas: 255 251 245;   /* warm cream page */
+  --c-surface: 255 255 255;  /* cards */
+  --c-raised: 255 245 233;   /* insets, wells */
+  --c-line: 240 227 212;
+  --c-ink: 45 27 14;         /* warm near-black */
+  --c-muted: 122 96 74;
+  --c-faint: 168 145 123;
+  --c-brand: 194 65 12;      /* terracotta — chrome only, never data */
+  --c-brand-soft: 255 237 213;
+  --c-brand-deep: 124 45 18;
+  --c-accent: 190 18 60;     /* deep rose */
+  --c-accent-soft: 255 228 232;
   color-scheme: light;
 }
 
 .dark {
-  --c-canvas: 6 15 24;
-  --c-surface: 12 24 36;
-  --c-raised: 17 32 46;
-  --c-line: 31 50 68;
-  --c-ink: 231 240 248;
-  --c-muted: 148 168 187;
-  --c-faint: 104 126 147;
-  --c-brand: 45 212 191;
-  --c-brand-soft: 8 51 55;
-  --c-brand-deep: 153 246 228;
+  --c-canvas: 20 14 10;      /* deep warm charcoal */
+  --c-surface: 33 24 18;     /* cards lift off it */
+  --c-raised: 45 33 25;      /* wells and insets */
+  --c-line: 66 49 37;
+  --c-ink: 250 242 234;
+  --c-muted: 200 179 160;
+  --c-faint: 151 130 112;
+  --c-brand: 251 165 92;     /* warm amber — chrome only, never data */
+  --c-brand-soft: 58 32 16;
+  --c-brand-deep: 254 224 188;
+  --c-accent: 251 130 141;
+  --c-accent-soft: 62 22 30;
   color-scheme: dark;
 }
 
@@ -46,20 +58,29 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
 }
 
-/* Tabular figures everywhere a number can change under the reader's eye. */
 .tnum { font-variant-numeric: tabular-nums; }
 
-::selection { background: rgb(var(--c-brand) / 0.24); }
+::selection { background: rgb(var(--c-brand) / 0.18); }
 
 *:focus-visible {
   outline: 2px solid rgb(var(--c-brand));
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
+
+html { scroll-behavior: smooth; }
+/* The sticky header must not cover the section a jump link lands on. */
+section[id] { scroll-margin-top: 5.5rem; }
 
 @layer components {
   .card {
-    @apply bg-surface border border-line rounded-2xl shadow-card;
+    @apply bg-surface border border-line rounded-2xl;
+    box-shadow: 0 1px 2px rgb(120 70 30 / 0.04),
+                0 10px 30px -18px rgb(120 70 30 / 0.28);
+  }
+  .dark .card {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04),
+                0 12px 32px -20px rgb(0 0 0 / 0.8);
   }
   .card-pad { @apply p-4 sm:p-5; }
 
@@ -68,20 +89,24 @@ body {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
-           text-sm font-medium transition-colors disabled:opacity-50
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
+           text-sm font-semibold transition-all disabled:opacity-50
            disabled:cursor-not-allowed;
   }
-  .btn-primary { @apply btn bg-brand text-white hover:bg-brand/90; }
-  .btn-ghost {
-    @apply btn border border-line bg-surface text-ink hover:bg-raised;
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-deep;
+    box-shadow: 0 2px 10px -2px rgb(var(--c-brand) / 0.45);
   }
-  .btn-subtle { @apply btn text-muted hover:text-ink hover:bg-raised; }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:bg-raised
+           hover:border-brand/40;
+  }
+  .btn-subtle { @apply btn px-3 text-muted hover:text-brand hover:bg-brand-soft; }
 
   .input {
     @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm
            text-ink placeholder:text-faint focus:border-brand focus:outline-none
-           focus:ring-2 focus:ring-brand/25;
+           focus:ring-2 focus:ring-brand/20;
   }
 
   .chip {
@@ -89,24 +114,24 @@ body {
            bg-raised px-2.5 py-1 text-2xs font-medium text-muted;
   }
 
-  .skeleton {
-    @apply relative overflow-hidden rounded-lg bg-line/60;
+  .section-title {
+    @apply text-lg font-bold tracking-tight text-ink sm:text-xl;
   }
+  .section-lede { @apply mt-1 max-w-2xl text-sm text-muted; }
+
+  .skeleton { @apply relative overflow-hidden rounded-lg bg-line/70; }
   .skeleton::after {
     content: '';
     @apply absolute inset-0 -translate-x-full animate-shimmer;
     background-image: linear-gradient(90deg, transparent,
-      rgb(var(--c-surface) / 0.55), transparent);
+      rgb(var(--c-surface) / 0.7), transparent);
   }
 }
 
-/* Leaflet needs a couple of overrides to sit inside the design system. */
-.leaflet-container {
-  background: rgb(var(--c-raised));
-  font-family: inherit;
-}
+/* Leaflet, dressed to match the design system. */
+.leaflet-container { background: rgb(var(--c-raised)); font-family: inherit; }
 .leaflet-control-attribution {
-  background: rgb(var(--c-surface) / 0.86) !important;
+  background: rgb(var(--c-surface) / 0.88) !important;
   color: rgb(var(--c-faint)) !important;
   font-size: 10px !important;
 }
@@ -115,10 +140,10 @@ body {
   background: rgb(var(--c-surface)) !important;
   color: rgb(var(--c-ink)) !important;
   border: 1px solid rgb(var(--c-line));
-  box-shadow: 0 18px 40px -20px rgb(0 0 0 / 0.5) !important;
+  box-shadow: 0 18px 40px -22px rgb(120 70 30 / 0.5) !important;
 }
 .leaflet-popup-content { margin: 0 !important; }
-.dark .leaflet-tile { filter: brightness(0.72) contrast(1.08) saturate(0.85); }
+.dark .leaflet-tile { filter: brightness(0.7) contrast(1.06) saturate(0.8); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -129,20 +154,17 @@ body {
 }
 
 /*
-  Chart tokens.
-
-  The categorical order is fixed and never cycled: identity is bound to the
-  entity, so filtering a series out never repaints the survivors. Both modes were
-  validated (lightness band, chroma floor, CVD separation, normal-vision floor,
-  contrast) against the AIRS surfaces — not flipped automatically from light.
-  Three light-mode slots sit below 3:1 on white, so every categorical chart in
-  AIRS ships direct value labels rather than relying on the swatch alone.
+  Chart tokens. The categorical order is fixed and bound to the entity, never
+  cycled, and was validated against this cream surface in both modes (lightness
+  band, chroma floor, CVD separation, normal-vision floor, contrast). Three
+  light slots sit below 3:1 on cream, so every categorical chart carries direct
+  value labels — the documented relief.
 */
 :root {
   --viz-surface: 255 255 255;
-  --viz-grid: 226 231 237;
-  --viz-axis: 137 135 129;
-  --viz-ink: 15 27 38;
+  --viz-grid: 240 227 212;
+  --viz-axis: 150 128 110;
+  --viz-ink: 45 27 14;
   --viz-1: 42 120 214;   /* blue    */
   --viz-2: 235 104 52;   /* orange  */
   --viz-3: 27 175 122;   /* aqua    */
@@ -153,10 +175,10 @@ body {
 }
 
 .dark {
-  --viz-surface: 12 24 36;
-  --viz-grid: 31 50 68;
-  --viz-axis: 137 135 129;
-  --viz-ink: 231 240 248;
+  --viz-surface: 36 26 19;
+  --viz-grid: 64 47 35;
+  --viz-axis: 148 124 104;
+  --viz-ink: 250 240 230;
   --viz-1: 57 135 229;
   --viz-2: 217 89 38;
   --viz-3: 25 158 112;

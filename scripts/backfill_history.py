@@ -32,7 +32,7 @@ from app.db.session import SessionLocal  # noqa: E402
 from app.services.providers.demo import (synth_air_quality, synth_traffic,  # noqa: E402
                                           synth_weather)
 from app.services.providers.openweather import ventilation_index  # noqa: E402
-from sqlalchemy import delete, select  # noqa: E402
+from sqlalchemy import delete, func, select  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -56,18 +56,35 @@ def backfill(days: int, city_slug: str | None, replace: bool) -> None:
                         db.execute(delete(model).where(
                             model.station_id == station.id,
                             model.provenance == Provenance.demo))
-                existing = set(db.scalars(select(AirQualityReading.observed_at).where(
-                    AirQualityReading.station_id == station.id,
-                    AirQualityReading.observed_at >= start)))
+                # Fast skip: a station already covering the whole window costs
+                # one COUNT instead of loading every timestamp. Without this a
+                # re-run spends its whole budget re-checking finished stations
+                # and never reaches the ones that still need data.
+                hours_needed = int((now - start).total_seconds() // 3600) + 1
+                have = db.scalar(select(func.count()).select_from(AirQualityReading)
+                                 .where(AirQualityReading.station_id == station.id,
+                                        AirQualityReading.observed_at >= start))
+                if have >= hours_needed:
+                    continue
+                # Each table needs its own set of covered hours: a partially
+                # ingested station can hold a weather row for an hour that has
+                # no air-quality row, and inserting blind trips the unique key.
+                existing = set(db.scalars(select(AirQualityReading.observed_at)
+                    .where(AirQualityReading.station_id == station.id,
+                           AirQualityReading.observed_at >= start)))
+                existing_wx = set(db.scalars(select(WeatherReading.observed_at)
+                    .where(WeatherReading.station_id == station.id,
+                           WeatherReading.observed_at >= start)))
+                existing_tr = set(db.scalars(select(TrafficReading.observed_at)
+                    .where(TrafficReading.station_id == station.id,
+                           TrafficReading.observed_at >= start)))
                 zone = station.zone_type.value
                 batch = []
                 ts = start
                 while ts <= now:
+                    local_hour = ts.astimezone(IST).hour
                     if ts not in existing:
                         aq = synth_air_quality(city.slug, station.code, zone, ts)
-                        wx = synth_weather(station.code, ts)
-                        tr = synth_traffic(station.code, zone, ts)
-                        local_hour = ts.astimezone(IST).hour
                         batch.append(AirQualityReading(
                             station_id=station.id, observed_at=ts, ingested_at=now,
                             provenance=Provenance.demo, aqi=aq.aqi,
@@ -75,6 +92,8 @@ def backfill(days: int, city_slug: str | None, replace: bool) -> None:
                             pm25=aq.pm25, pm10=aq.pm10, no2=aq.no2, so2=aq.so2,
                             co=aq.co, o3=aq.o3, sub_indices=aq.sub_indices,
                             quality_flags=[]))
+                    if ts not in existing_wx:
+                        wx = synth_weather(station.code, ts)
                         batch.append(WeatherReading(
                             station_id=station.id, observed_at=ts, ingested_at=now,
                             provenance=Provenance.demo,
@@ -85,6 +104,8 @@ def backfill(days: int, city_slug: str | None, replace: bool) -> None:
                             condition=wx.condition,
                             ventilation_index=ventilation_index(
                                 wx.wind_speed_mps, wx.temperature_c, local_hour)))
+                    if ts not in existing_tr:
+                        tr = synth_traffic(station.code, zone, ts)
                         batch.append(TrafficReading(
                             station_id=station.id, observed_at=ts, ingested_at=now,
                             provenance=Provenance.demo,
@@ -96,6 +117,7 @@ def backfill(days: int, city_slug: str | None, replace: bool) -> None:
                         db.add_all(batch); db.commit(); batch = []
                 if batch:
                     db.add_all(batch); db.commit()
+                
                 print(f"  {city.slug}/{station.code} backfilled")
     print("Backfill complete.")
 

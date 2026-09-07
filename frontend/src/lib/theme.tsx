@@ -23,7 +23,9 @@ function readStored(): Theme {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw === 'light' || raw === 'dark' || raw === 'system') return raw
   } catch { /* storage unavailable */ }
-  return 'system'
+  // Dark by intent, not by system preference: the warm dark palette is the
+  // product's face, and a data-dense dashboard is easier on the eyes in it.
+  return 'dark'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
