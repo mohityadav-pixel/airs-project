@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core import cache as cache_module
 from app.core.cache import cache
 from app.core.config import settings
 from app.core.errors import ProviderNotConfigured, ProviderUnavailable
@@ -65,13 +66,29 @@ def fetch_air_quality(station: Station, city: City) -> tuple[object, str]:
         try:
             obs = aq_provider.fetch(station.latitude, station.longitude)
             obs = validation.validate_air_quality(obs)
-            if validation.is_usable(obs):
-                cache.set(key, obs, AQ_TTL_SECONDS)
-                return obs, Resolution.LIVE
-            raise ProviderUnavailable("Upstream returned no usable pollutant data.")
+            if not validation.is_usable(obs):
+                raise ProviderUnavailable(
+                    "Upstream returned no usable pollutant data.")
+            if "stale" in obs.quality_flags:
+                # The feed answered, but with an observation old enough that
+                # presenting it as "now" would be a lie. Report it as a feed
+                # problem — with the age, which is the actionable part — rather
+                # than quietly storing a year-old number as the current AQI.
+                age_hours = (datetime.now(timezone.utc)
+                             - obs.observed_at).total_seconds() / 3600
+                raise ProviderUnavailable(
+                    "The air-quality feed for this location is stale.",
+                    detail=(f"nearest upstream station last reported "
+                            f"{age_hours:,.0f} h ago "
+                            f"({obs.observed_at.isoformat()})"))
+            cache.set(key, obs, AQ_TTL_SECONDS)
+            cache_module.record_success("air_quality")
+            return obs, Resolution.LIVE
         except (ProviderUnavailable, ProviderNotConfigured) as exc:
             log_event(logger, logging.WARNING, "aq_provider_failed",
-                      station=station.code, reason=type(exc).__name__)
+                      station=station.code, reason=type(exc).__name__,
+                      detail=str(getattr(exc, "detail", None) or exc)[:300])
+            cache_module.record_failure("air_quality", exc)
             stale = cache.get_stale(key)
             if stale is not None:
                 return stale[0], Resolution.CACHED
@@ -95,10 +112,13 @@ def fetch_weather(station: Station) -> tuple[object, str]:
             obs = weather_provider.fetch(station.latitude, station.longitude)
             obs, _ = validation.validate_weather(obs)
             cache.set(key, obs, WEATHER_TTL_SECONDS)
+            cache_module.record_success("weather")
             return obs, Resolution.LIVE
         except (ProviderUnavailable, ProviderNotConfigured) as exc:
             log_event(logger, logging.WARNING, "weather_provider_failed",
-                      station=station.code, reason=type(exc).__name__)
+                      station=station.code, reason=type(exc).__name__,
+                      detail=str(getattr(exc, "detail", None) or exc)[:300])
+            cache_module.record_failure("weather", exc)
             stale = cache.get_stale(key)
             if stale is not None:
                 return stale[0], Resolution.CACHED

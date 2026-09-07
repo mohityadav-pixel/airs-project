@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.ai import gemini
+from app.core import cache as cache_module
 from app.core.config import settings
 from app.db.models import AirQualityReading, Provenance
 from app.db.session import get_db
@@ -49,6 +50,9 @@ def status(db: Session = Depends(get_db)) -> dict:
             "model_version": (manifest or {}).get("model_version"),
             "reports": (manifest or {}).get("reports", []),
         },
+        # Why a provider is quiet, if it is. Empty means everything that is
+        # configured is currently working.
+        "provider_failures": cache_module.last_failures(),
         "server_time": datetime.now(timezone.utc),
     }
 

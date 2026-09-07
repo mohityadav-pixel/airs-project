@@ -48,5 +48,16 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-def log_event(logger: logging.Logger, level: int, message: str, **fields) -> None:
-    logger.log(level, message, extra={"extra_fields": fields})
+def log_event(logger: logging.Logger, level: int, event: str, **fields) -> None:
+    """Emit one structured event.
+
+    The event name is positional and called `event`, not `message`: callers
+    naturally want to attach a `message=` field (an upstream error string), and
+    when that collided with the positional parameter it raised TypeError from
+    inside the error handler that was trying to report the original failure.
+    A logging call must never be able to break the code it is reporting on, so
+    a stray `message` field is folded into `detail` instead.
+    """
+    if "message" in fields:
+        fields["detail"] = fields.pop("message")
+    logger.log(level, event, extra={"extra_fields": fields})

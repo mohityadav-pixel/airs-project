@@ -377,6 +377,11 @@ export interface SystemStatus {
       n_test: number
     }>
   }
+  provider_failures?: Record<string, {
+    error: string
+    message: string
+    seconds_ago: number
+  }>
   server_time: string
 }
 

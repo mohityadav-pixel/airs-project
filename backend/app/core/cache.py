@@ -58,3 +58,38 @@ def cached_call(key: str, ttl_seconds: float, fn: Callable[[], Any]) -> Any:
     value = fn()
     cache.set(key, value, ttl_seconds)
     return value
+
+
+# ── last-failure registry ─────────────────────────────────────────────
+# AIRS degrades quietly on purpose: a dead upstream must never take the site
+# down. The cost is that a user sees a generic message. This records the real
+# reason for each provider so /system/status can report it and the operator
+# does not have to read the log to find out.
+
+_last_errors: dict[str, dict] = {}
+_errors_lock = threading.Lock()
+
+
+def record_failure(provider: str, exc: BaseException) -> None:
+    import time as _time
+    with _errors_lock:
+        _last_errors[provider] = {
+            "error": type(exc).__name__,
+            "message": str(exc)[:300],
+            "at": _time.time(),
+        }
+
+
+def record_success(provider: str) -> None:
+    with _errors_lock:
+        _last_errors.pop(provider, None)
+
+
+def last_failures() -> dict[str, dict]:
+    import time as _time
+    with _errors_lock:
+        return {
+            name: {**info,
+                   "seconds_ago": round(_time.time() - info["at"])}
+            for name, info in _last_errors.items()
+        }

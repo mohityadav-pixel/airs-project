@@ -9,7 +9,7 @@ it is bad at, which is arithmetic forecasting.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -17,6 +17,23 @@ from app.db.models import City, Station
 from app.domain.aqi import POLLUTANT_LABELS, categorize
 from app.services import repository
 from app.services.source_attribution import SOURCE_LABELS
+
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def _local(ts: datetime | None) -> str:
+    """Indian local time, spelled out.
+
+    The model was handed UTC timestamps and dutifully quoted "09:30 UTC" to a
+    reader in Mumbai. Every user of this platform is in IST, so that is what
+    the facts carry.
+    """
+    if ts is None:
+        return "unknown"
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(IST).strftime("%-d %b %Y, %-I:%M %p IST")
 
 
 def _fmt(value, unit: str = "", digits: int = 1) -> str:
@@ -46,7 +63,7 @@ def build_station_context(db: Session, city: City, station: Station, *,
         category = categorize(reading.aqi)
         facts.append(
             f"[OBSERVED] Current AQI (US EPA scale) at "
-            f"{reading.observed_at.isoformat()}: {_fmt(reading.aqi, digits=0)}"
+            f"{_local(reading.observed_at)}: {_fmt(reading.aqi, digits=0)}"
             + (f" — category '{category.label}'." if category else ".")
             + f" Dominant pollutant: {reading.dominant_pollutant or 'unknown'}."
             + f" Data provenance: {reading.provenance.value}.")
@@ -83,7 +100,7 @@ def build_station_context(db: Session, city: City, station: Station, *,
     if forecasts:
         for fc in forecasts:
             facts.append(
-                f"[PREDICTED] In {fc.horizon_hours}h ({fc.target_at.isoformat()}): "
+                f"[PREDICTED] In {fc.horizon_hours}h ({_local(fc.target_at)}): "
                 f"AQI {_fmt(fc.aqi, digits=0)} "
                 f"(80% range {_fmt(fc.aqi_lower, digits=0)}–{_fmt(fc.aqi_upper, digits=0)}), "
                 f"PM2.5 {_fmt(fc.pm25)}, confidence {fc.confidence}, "

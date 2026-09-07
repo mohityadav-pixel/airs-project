@@ -48,7 +48,8 @@ def answer(db: Session, *, question: str, city: City, station: Station,
               f"USER QUESTION\n{clean_question}\n\n"
               f"Answer using only the grounded facts above.")
 
-    text = gemini.generate(COPILOT_SYSTEM, prompt, temperature=0.35)
+    text = gemini.generate(COPILOT_SYSTEM, prompt, temperature=0.35,
+                           max_output_tokens=1400)
 
     now = datetime.now(timezone.utc)
     grounding = {"facts": context["facts"],

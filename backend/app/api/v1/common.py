@@ -5,9 +5,14 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
+import logging
+
 from app.core.errors import DataUnavailable, InvalidRequest
+from app.core.logging_config import get_logger, log_event
 from app.db.models import City, Station
 from app.services import ingestion, repository
+
+logger = get_logger("airs.api.refresh")
 
 # How old the newest stored reading may be before we go back to the provider.
 REFRESH_AFTER = timedelta(minutes=20)
@@ -53,19 +58,48 @@ def ensure_fresh(db: Session, city: City, station: Station) -> None:
             return
     try:
         ingestion.persist_snapshot(db, station, city)
-    except Exception:
-        db.rollback()   # keep serving what we have; the payload marks it stale
+    except Exception as exc:
+        # Keep serving stored data — the payload marks it stale — but never
+        # lose the reason. A silently failing live fetch looks exactly like
+        # data loss from the browser.
+        db.rollback()
+        log_event(logger, logging.WARNING, "refresh_failed",
+                  station=station.code, error=type(exc).__name__,
+                  detail=str(getattr(exc, "detail", None) or exc)[:300])
+
+
+# One page load may trigger at most this many upstream refreshes. Each costs an
+# air-quality plus a weather round trip, so refreshing a ten-station city inline
+# turned a dashboard load into six seconds of waiting. The hourly ingest script
+# (scripts/ingest.py) is what keeps the whole network current; a page load only
+# tops up the stalest few.
+MAX_REFRESH_PER_REQUEST = 3
 
 
 def ensure_city_fresh(db: Session, city: City) -> None:
     latest = repository.city_latest_readings(db, city.id)
     stations = repository.city_stations(db, city.id)
     now = datetime.now(timezone.utc)
+
+    stale: list[tuple[datetime, Station]] = []
     for station in stations:
         reading = latest.get(station.id)
-        if reading is not None and now - reading.observed_at < REFRESH_AFTER:
-            continue
+        if reading is None:
+            stale.append((datetime.min.replace(tzinfo=timezone.utc), station))
+        elif now - reading.observed_at >= REFRESH_AFTER:
+            stale.append((reading.observed_at, station))
+
+    stale.sort(key=lambda pair: pair[0])          # stalest first
+    for _, station in stale[:MAX_REFRESH_PER_REQUEST]:
         try:
             ingestion.persist_snapshot(db, station, city)
-        except Exception:
+        except Exception as exc:
             db.rollback()
+            log_event(logger, logging.WARNING, "refresh_failed",
+                      station=station.code, error=type(exc).__name__,
+                      detail=str(getattr(exc, "detail", None) or exc)[:300])
+
+    if len(stale) > MAX_REFRESH_PER_REQUEST:
+        log_event(logger, logging.INFO, "refresh_deferred",
+                  city=city.slug, refreshed=MAX_REFRESH_PER_REQUEST,
+                  still_stale=len(stale) - MAX_REFRESH_PER_REQUEST)

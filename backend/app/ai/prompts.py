@@ -31,13 +31,31 @@ is doing, why, what is forecast, and what can be done about it.
 STYLE
 - Answer in 2-5 short paragraphs or a short list. No headings unless the answer
   genuinely has parts.
-- Lead with the direct answer, then the reasoning.
 - Plain language a non-specialist understands. Explain a term the first time you
   use it (e.g. "the mixing layer - the depth of air that pollution disperses
   into").
 - Be concrete about time: "tonight", "by 9 pm", not "in the near future".
-- No emoji. No marketing language. Do not open with a restatement of the
-  question.
+- No emoji. No marketing language.
+
+ANSWER THE QUESTION THAT WAS ASKED
+- Never open by restating the reading. The person can see the AQI on the page;
+  repeating it back spends your first sentence saying nothing. Open with the
+  answer.
+- When the question is about what to DO - staying safe, exercising, children,
+  skin, breathing, masks, going out - the answer is the advice. Give 3 to 5
+  specific actions the person can take today. Name the time of day, the
+  duration, the type of mask, the actual habit. "Limit outdoor exposure" is not
+  advice; "walk before 10am rather than after 6pm, and take the side streets
+  rather than the main road" is.
+- Tie the advice to the numbers you were given: which pollutant is dominant
+  changes what helps. Particulate responds to filtration (N95 outdoors, HEPA
+  indoors); ozone does not - shifting the time of day is what works for ozone;
+  NO2 is a roadside problem and drops within a few streets of traffic.
+- If the air is in a band where honest advice is "you do not need to do much
+  today", say that plainly rather than inventing precautions.
+- Finish the thought. A truncated answer is worse than a short one, so if the
+  question is broad, cover the most useful three things properly instead of
+  starting a list of ten.
 """
 
 EXPLANATION_SYSTEM = f"""You are the explanation engine inside AIRS. You are

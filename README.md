@@ -82,6 +82,20 @@ cd backend && ../.venv/bin/python -m app.db.init_db
 cd frontend && npm install && npm run dev
 ```
 
+### If the site says "Could not load this / Not Found"
+
+An old backend process is still bound to port 8000, serving code from before
+your last change. The browser cannot tell you that, so:
+
+```bash
+./scripts/restart.sh
+```
+
+It kills whatever holds ports 8000 and 5173, prints how many cities, readings
+and trained models it can actually see, and refuses to send you to the site
+until the API answers. Use it in preference to `dev.sh` whenever something
+looks wrong.
+
 ### Getting data on screen
 
 A brand-new install has reference data (cities, stations, intervention
