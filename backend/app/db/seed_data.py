@@ -181,6 +181,9 @@ def _expand(entry: tuple[str, str, float, float, float, str]) -> dict:
     }
 
 
+from app.db.india_cities import EXTRA_CITIES  # noqa: E402
+
+MORE_CITIES = MORE_CITIES + EXTRA_CITIES
 CITIES = CITIES + [_expand(entry) for entry in MORE_CITIES]
 
 # Annual-mean PM2.5 per city, consumed by the synthetic model so the national

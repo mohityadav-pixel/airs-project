@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
+import { insights } from '@/lib/insights'
 import { useSelection } from '@/lib/selection'
 
 /**
- * City picker for a 70-city network. A plain <select> with 70 options is
+ * City picker for a 270-city network. A plain <select> with 70 options is
  * unusable on a phone, so this is a search box with a keyboard-navigable list
  * and the metros offered as one-tap chips.
  */
@@ -15,20 +17,25 @@ export function CitySearch({ compact = false }: { compact?: boolean }) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const boxRef = useRef<HTMLDivElement>(null)
+  const meta = useQuery({ queryKey: ['insights-cities'], queryFn: insights.cities,
+    staleTime: 60 * 60 * 1000 })
+  const stateOf = useMemo(() => new Map((meta.data ?? []).map((c) => [c.slug, c.state])),
+    [meta.data])
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return cities.slice(0, 10)
     return cities
       .filter((c) => c.name.toLowerCase().includes(needle)
-                  || c.slug.includes(needle))
+                  || c.slug.includes(needle)
+                  || (stateOf.get(c.slug) ?? '').toLowerCase().includes(needle))
       .sort((a, b) => {
         const ap = a.name.toLowerCase().startsWith(needle) ? 0 : 1
         const bp = b.name.toLowerCase().startsWith(needle) ? 0 : 1
         return ap - bp || a.name.localeCompare(b.name)
       })
       .slice(0, 10)
-  }, [cities, query])
+  }, [cities, query, stateOf])
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -85,7 +92,7 @@ export function CitySearch({ compact = false }: { compact?: boolean }) {
                   e.preventDefault(); choose(results[active].slug)
                 } else if (e.key === 'Escape') { setOpen(false) }
               }}
-              placeholder={`Search ${cities.length} Indian cities`}
+              placeholder={`Search ${cities.length} cities or a state`}
               aria-label="Search cities" className="input py-2 text-sm" />
           </div>
 
@@ -115,7 +122,11 @@ export function CitySearch({ compact = false }: { compact?: boolean }) {
                                     py-2 text-left text-sm transition-colors ${
                           i === active ? 'bg-brand-soft text-brand'
                                        : 'text-ink hover:bg-raised'}`}>
-                  {c.name}
+                  <span className="min-w-0">
+                    <span className="block truncate">{c.name}</span>
+                    <span className="block truncate text-2xs text-faint">
+                      {stateOf.get(c.slug) ?? ''}</span>
+                  </span>
                   {citySlug === c.slug && (
                     <span className="text-2xs font-semibold text-brand">current</span>
                   )}

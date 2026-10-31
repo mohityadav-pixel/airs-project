@@ -31,6 +31,10 @@ def suggestions() -> dict:
 def ask(payload: CopilotRequest, db: Session = Depends(get_db),
         user: User | None = Depends(get_current_user_optional)) -> CopilotResponse:
     city = resolve_city(db, payload.city_slug)
+    # "how is the air in Kalyan?" asked while Mumbai is selected: answer for Kalyan
+    mentioned = _city_in_question(db, payload.question)
+    if mentioned is not None:
+        city = mentioned
     station = resolve_station(db, city, payload.station_id)
     ensure_fresh(db, city, station)
 
@@ -89,3 +93,19 @@ def conversation_detail(conversation_id: int, db: Session = Depends(get_db),
     return {"id": conversation.id, "title": conversation.title,
             "messages": [{"role": m.role, "content": m.content, "at": m.at,
                           "grounding": m.grounding} for m in conversation.messages]}
+
+
+def _city_in_question(db: Session, question: str):
+    import re
+    from app.services import repository
+    text = f" {re.sub(r'[^a-z ]', ' ', (question or '').lower())} "
+    best = None
+    for c in repository.list_cities(db):
+        names = {c.name.lower(), c.slug.replace("-", " ")}
+        names |= {part.strip() for part in c.name.lower().replace("(", "-")
+                  .replace(")", "").split("-") if len(part.strip()) >= 4}
+        for n in names:
+            n = re.sub(r"[^a-z ]", " ", n).strip()
+            if n and f" {n} " in text and (best is None or len(n) > best[0]):
+                best = (len(n), c)
+    return best[1] if best else None

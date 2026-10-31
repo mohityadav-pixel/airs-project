@@ -3,51 +3,43 @@
 @tailwind utilities;
 
 /*
-  AIRS — "Sunrise" theme.
+  AIRS — "Aurora" theme.
 
-  Dark by default and dark by intent. The palette is a warm dark - charcoal
-  with a brown undertone rather than blue-black - so it stays in the same
-  "sunrise" family as the light theme instead of reading as a different
-  product. A light variant is one tap away on the toggle.
-
-  One deliberate collision was designed around. The requested brand colours
-  (amber, coral) sit almost exactly on top of two AQI band colours — EPA orange
-  #F08A24 "Unhealthy for Sensitive Groups" and red #E14B4B "Unhealthy". A
-  primary button the same colour as a pollution warning is a real hazard, so the
-  brand uses deeper, browner steps (terracotta and rose) that stay unmistakably
-  warm while never being confused for a health warning. AQI band colours are a
-  published standard: they are data, they are identical in both themes, and no
-  brand colour is allowed near them without a text label.
+  A deep night-sky navy in dark mode and a crisp sky-white in light mode, with
+  a sky-blue / fuchsia brand gradient for chrome. The six AQI band colours are
+  a published standard — green, yellow, orange, red, purple, maroon — so the
+  brand deliberately lives in the blue/pink family that none of them use:
+  a button can never be mistaken for a pollution warning.
 */
 :root {
-  --c-canvas: 255 251 245;   /* warm cream page */
-  --c-surface: 255 255 255;  /* cards */
-  --c-raised: 255 245 233;   /* insets, wells */
-  --c-line: 240 227 212;
-  --c-ink: 45 27 14;         /* warm near-black */
-  --c-muted: 122 96 74;
-  --c-faint: 168 145 123;
-  --c-brand: 194 65 12;      /* terracotta — chrome only, never data */
-  --c-brand-soft: 255 237 213;
-  --c-brand-deep: 124 45 18;
-  --c-accent: 190 18 60;     /* deep rose */
-  --c-accent-soft: 255 228 232;
+  --c-canvas: 244 247 255;
+  --c-surface: 255 255 255;
+  --c-raised: 236 241 253;
+  --c-line: 220 227 245;
+  --c-ink: 15 23 42;
+  --c-muted: 71 85 115;
+  --c-faint: 118 131 160;
+  --c-brand: 2 132 199;        /* sky-600 */
+  --c-brand-soft: 224 242 254;
+  --c-brand-deep: 7 89 133;
+  --c-accent: 219 39 119;      /* pink-600 */
+  --c-accent-soft: 252 231 243;
   color-scheme: light;
 }
 
 .dark {
-  --c-canvas: 20 14 10;      /* deep warm charcoal */
-  --c-surface: 33 24 18;     /* cards lift off it */
-  --c-raised: 45 33 25;      /* wells and insets */
-  --c-line: 66 49 37;
-  --c-ink: 250 242 234;
-  --c-muted: 200 179 160;
-  --c-faint: 151 130 112;
-  --c-brand: 251 165 92;     /* warm amber — chrome only, never data */
-  --c-brand-soft: 58 32 16;
-  --c-brand-deep: 254 224 188;
-  --c-accent: 251 130 141;
-  --c-accent-soft: 62 22 30;
+  --c-canvas: 8 12 28;         /* night navy */
+  --c-surface: 16 22 46;
+  --c-raised: 25 33 64;
+  --c-line: 41 52 92;
+  --c-ink: 236 241 255;
+  --c-muted: 166 178 212;
+  --c-faint: 116 128 166;
+  --c-brand: 56 189 248;       /* sky-400 */
+  --c-brand-soft: 12 44 74;
+  --c-brand-deep: 186 230 253;
+  --c-accent: 244 114 182;     /* pink-400 */
+  --c-accent-soft: 64 20 48;
   color-scheme: dark;
 }
 
@@ -75,8 +67,8 @@ section[id] { scroll-margin-top: 5.5rem; }
 @layer components {
   .card {
     @apply bg-surface border border-line rounded-2xl;
-    box-shadow: 0 1px 2px rgb(120 70 30 / 0.04),
-                0 10px 30px -18px rgb(120 70 30 / 0.28);
+    box-shadow: 0 1px 2px rgb(30 60 140 / 0.05),
+                0 12px 32px -18px rgb(30 60 140 / 0.25);
   }
   .dark .card {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04),
@@ -94,9 +86,11 @@ section[id] { scroll-margin-top: 5.5rem; }
            disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-brand text-white hover:bg-brand-deep;
-    box-shadow: 0 2px 10px -2px rgb(var(--c-brand) / 0.45);
+    @apply btn text-white;
+    background-image: linear-gradient(135deg, #0EA5E9, #6366F1 55%, #DB2777);
+    box-shadow: 0 6px 18px -6px rgb(99 102 241 / 0.55);
   }
+  .btn-primary:hover { filter: brightness(1.08); }
   .btn-ghost {
     @apply btn border border-line bg-surface text-ink hover:bg-raised
            hover:border-brand/40;
@@ -140,10 +134,10 @@ section[id] { scroll-margin-top: 5.5rem; }
   background: rgb(var(--c-surface)) !important;
   color: rgb(var(--c-ink)) !important;
   border: 1px solid rgb(var(--c-line));
-  box-shadow: 0 18px 40px -22px rgb(120 70 30 / 0.5) !important;
+  box-shadow: 0 18px 40px -22px rgb(15 23 42 / 0.5) !important;
 }
 .leaflet-popup-content { margin: 0 !important; }
-.dark .leaflet-tile { filter: brightness(0.7) contrast(1.06) saturate(0.8); }
+.dark .leaflet-tile { filter: brightness(0.95) contrast(1.05); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -162,9 +156,9 @@ section[id] { scroll-margin-top: 5.5rem; }
 */
 :root {
   --viz-surface: 255 255 255;
-  --viz-grid: 240 227 212;
-  --viz-axis: 150 128 110;
-  --viz-ink: 45 27 14;
+  --viz-grid: 226 232 246;
+  --viz-axis: 110 122 150;
+  --viz-ink: 15 23 42;
   --viz-1: 42 120 214;   /* blue    */
   --viz-2: 235 104 52;   /* orange  */
   --viz-3: 27 175 122;   /* aqua    */
@@ -175,10 +169,10 @@ section[id] { scroll-margin-top: 5.5rem; }
 }
 
 .dark {
-  --viz-surface: 36 26 19;
-  --viz-grid: 64 47 35;
-  --viz-axis: 148 124 104;
-  --viz-ink: 250 240 230;
+  --viz-surface: 16 22 46;
+  --viz-grid: 38 48 84;
+  --viz-axis: 128 140 180;
+  --viz-ink: 236 241 255;
   --viz-1: 57 135 229;
   --viz-2: 217 89 38;
   --viz-3: 25 158 112;
@@ -187,3 +181,36 @@ section[id] { scroll-margin-top: 5.5rem; }
   --viz-6: 0 131 0;
   --viz-band: 57 135 229;
 }
+
+/* ── Aurora extras ─────────────────────────────────────────────────── */
+@keyframes bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-5px) } }
+@keyframes drift { 0% { transform: translate3d(0,0,0) } 50% { transform: translate3d(3%, -2%, 0) } 100% { transform: translate3d(0,0,0) } }
+
+.aurora-bg {
+  background:
+    radial-gradient(40% 50% at 12% 0%, rgb(56 189 248 / 0.22), transparent 70%),
+    radial-gradient(35% 45% at 88% 8%, rgb(236 72 153 / 0.18), transparent 70%),
+    radial-gradient(45% 50% at 50% 100%, rgb(99 102 241 / 0.16), transparent 70%);
+  animation: drift 18s ease-in-out infinite;
+}
+.text-gradient {
+  background-image: linear-gradient(90deg, #0EA5E9, #6366F1 45%, #EC4899);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.glass {
+  background: rgb(255 255 255 / 0.16);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  backdrop-filter: blur(10px);
+}
+.seg { @apply inline-flex flex-wrap gap-1 rounded-full border border-line bg-surface p-1; }
+.seg-btn { @apply rounded-full px-3.5 py-1.5 text-xs font-semibold text-muted transition-all hover:text-brand; }
+.seg-btn[aria-pressed="true"] {
+  @apply text-white;
+  background-image: linear-gradient(135deg, #0EA5E9, #6366F1);
+  box-shadow: 0 4px 12px -4px rgb(99 102 241 / 0.6);
+}
+.pill-live::before {
+  content: ''; @apply mr-1.5 inline-block h-2 w-2 rounded-full bg-current;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes live-pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }

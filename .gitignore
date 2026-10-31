@@ -26,6 +26,8 @@ data/*.sqlite3-wal
 data/*.sqlite3-shm
 data/*.db
 data/*.tgz
+data/history_cache/
+*.zip
 frontend/.legacy-pages/
 backend/ml/artifacts/*.joblib
 backend/ml/artifacts/*.json

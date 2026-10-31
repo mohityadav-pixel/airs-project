@@ -63,29 +63,46 @@ def available() -> bool:
 # current alternatives — and remember which one worked, so the fallback costs
 # one extra call once rather than on every message.
 FALLBACK_MODELS = [
-    "gemini-2.5-flash",       # current workhorse
-    "gemini-flash-latest",    # always points at the newest flash
-    "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",       # retired for newer keys, kept for older ones
-    "gemini-1.5-flash",
+    # Checked against this key's model list on 28 Sep 2026. Newest flash
+    # first; several are listed because any one of them can be "experiencing
+    # high demand" at a given moment.
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-2.5-flash",
 ]
 
 _working_model: str | None = None
 
 
 def _model_candidates() -> list[str]:
-    if _working_model:
-        return [_working_model]
-    ordered = [settings.gemini_model]
-    ordered += [m for m in FALLBACK_MODELS if m != settings.gemini_model]
-    return ordered
+    # The model that last worked goes first, but the others stay in the list:
+    # a model that is "experiencing high demand" right now is a reason to try
+    # the next one, not to fail the whole assistant.
+    ordered = ([_working_model] if _working_model else []) + [settings.gemini_model]
+    ordered += FALLBACK_MODELS
+    return list(dict.fromkeys(ordered))        # de-duplicate, keep order
+
+
+def _client(genai):
+    """AI Studio client. Keys starting ``AQ.`` are also AI Studio keys (tested:
+    the Vertex endpoint rejects them), so every key goes to the same place."""
+    return genai.Client(api_key=(settings.gemini_api_key or "").strip())
 
 
 def _is_model_problem(exc: BaseException) -> bool:
     text = str(exc).lower()
     return any(hint in text for hint in
                ("not found", "not_found", "404", "is not supported",
-                "unsupported", "deprecated", "does not exist"))
+                "unsupported", "deprecated", "does not exist", "no longer available",
+                # temporary overload on one model: another may be free
+                "503", "unavailable", "high demand", "overloaded", "429",
+                "resource_exhausted", "quota"))
 
 
 def generate(system_instruction: str, prompt: str, *,
@@ -101,7 +118,7 @@ def generate(system_instruction: str, prompt: str, *,
     except ImportError as exc:                       # pragma: no cover
         raise AIUnavailable("The Gemini client library is not installed.") from exc
 
-    client = genai.Client(api_key=settings.gemini_api_key)
+    client = _client(genai)
 
     def build_config(*, budget: int, no_thinking: bool):
         """Assemble the request config.

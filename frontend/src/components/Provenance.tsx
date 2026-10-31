@@ -14,8 +14,8 @@ const KIND_META: Record<DataKind, { label: string; tone: string; note: string }>
     note: 'Recorded by a monitoring station.',
   },
   predicted: {
-    label: 'ML forecast', tone: 'text-[#2a78d6] border-[#2a78d6]/35 bg-[#2a78d6]/10',
-    note: 'Produced by the AIRS forecasting model. Not a measurement.',
+    label: 'Forecast', tone: 'text-[#2a78d6] border-[#2a78d6]/35 bg-[#2a78d6]/10',
+    note: 'A forecast from an atmospheric or machine-learning model. Not a measurement.',
   },
   simulated: {
     label: 'Modelled scenario',

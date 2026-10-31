@@ -100,6 +100,34 @@ def check_waqi() -> None:
         bad(f"{type(exc).__name__}: {exc}")
 
 
+def check_waqi_network() -> None:
+    print("\nWAQI station network (what AIRS now uses for city averages)")
+    if not settings.waqi_token:
+        return
+    try:
+        from app.services.providers.waqi import WaqiProvider
+        stations = WaqiProvider().india_index()
+        fresh = [s for s in stations if s.aqi is not None
+                 and (s.age_hours() or 99) <= 3]
+        ok(f"{len(stations)} Indian stations listed, {len(fresh)} reported in "
+           "the last 3 hours")
+    except Exception as exc:
+        bad(f"could not load the station list: {type(exc).__name__}: "
+            f"{getattr(exc, 'detail', None) or exc}")
+
+
+def check_open_meteo() -> None:
+    print("\nOpen-Meteo (CAMS model: history, forecast, weather — no key needed)")
+    try:
+        from app.services.providers import openmeteo
+        obs = openmeteo.OpenMeteoAirProvider().fetch(28.6139, 77.2090)
+        ok(f"modelled US AQI for Delhi right now: {obs.aqi}")
+        wx = openmeteo.OpenMeteoWeatherProvider().fetch(19.076, 72.8777)
+        ok(f"weather for Mumbai: {wx.temperature_c}°C, {wx.condition}")
+    except Exception as exc:
+        bad(f"{type(exc).__name__}: {getattr(exc, 'detail', None) or exc}")
+
+
 def check_openweather() -> None:
     print(f"\nOpenWeatherMap  key={mask(settings.openweather_api_key)}")
     if not settings.openweather_api_key:
@@ -176,6 +204,10 @@ def check_gemini() -> None:
     except Exception:
         warn("could not determine the google-genai version")
 
+    _gemini_app_path()
+
+
+def _gemini_app_path() -> None:
     # Now the real thing, through the same client library the app uses.
     try:
         from app.ai import gemini
@@ -198,6 +230,8 @@ if __name__ == "__main__":
     print("=" * 68)
     check_internet()
     check_waqi()
+    check_waqi_network()
+    check_open_meteo()
     check_openweather()
     check_gemini()
     print("\nDone. Anything marked FAIL above is why that feature is quiet.\n")

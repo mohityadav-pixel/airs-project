@@ -1,14 +1,14 @@
-import { useMemo } from 'react'
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from 'react-leaflet'
+import { useEffect, useMemo } from 'react'
+import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { aqiColor, categoryFor } from '@/lib/aqi'
 import { num, relativeTime } from '@/lib/format'
 import { useTheme } from '@/lib/theme'
 
-const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
-const ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
+const LIGHT_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+const DARK_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+const ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
 
 export interface IndiaCityPoint {
   slug: string
@@ -28,6 +28,16 @@ export interface IndiaCityPoint {
  * Zoom is capped and dragging is enabled but scroll-zoom is off: on a page you
  * scroll through, a map that swallows the wheel is a trap.
  */
+function InvalidateSize() {
+  const map = useMap()
+  useEffect(() => {
+    map.invalidateSize()
+    const timer = setTimeout(() => map.invalidateSize(), 200)
+    return () => clearTimeout(timer)
+  }, [map])
+  return null
+}
+
 export function IndiaMap({ cities, selectedSlug, onSelect, height = 520 }: {
   cities: IndiaCityPoint[]
   selectedSlug?: string
@@ -49,10 +59,12 @@ export function IndiaMap({ cities, selectedSlug, onSelect, height = 520 }: {
       <MapContainer center={[22.6, 79.5]} zoom={5} minZoom={4} maxZoom={9}
                     scrollWheelZoom={false}
                     style={{ height: '100%', width: '100%' }}>
-        <TileLayer key={resolved} url={tiles} attribution={ATTRIBUTION} />
+        <TileLayer key={resolved} url={tiles} attribution={ATTRIBUTION}
+                   maxNativeZoom={16} maxZoom={9} />
+        <InvalidateSize />
         {ordered.map((city) => {
           const selected = selectedSlug === city.slug
-          const radius = selected ? 13 : 9
+          const radius = selected ? 12 : 7
           return (
             <CircleMarker
               key={city.slug}

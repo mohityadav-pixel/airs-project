@@ -9,12 +9,13 @@ import { useAuth } from '@/lib/auth'
 
 /** The page is one scroll, so the primary nav is jump links, not routes. */
 const SECTIONS = [
-  { id: 'live', label: 'Live' },
-  { id: 'history', label: 'History' },
+  { id: 'live', label: 'Live AQI' },
   { id: 'forecast', label: 'Forecast' },
+  { id: 'stations', label: 'Stations' },
+  { id: 'history', label: 'History' },
   { id: 'why', label: 'Why' },
   { id: 'solutions', label: 'Solutions' },
-  { id: 'india', label: 'India map' },
+  { id: 'india', label: 'Ranking' },
 ]
 
 const PAGES: Array<{ to: string; label: string; minRole?: 'official' }> = [
@@ -80,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {!onHome && (
               <Link to="/" className="rounded-full px-3 py-2 text-sm font-semibold
                                       text-muted hover:text-brand">
-                ← Back to the dashboard
+                ← Back to AIRS Home
               </Link>
             )}
           </nav>
@@ -167,15 +168,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div>
               <Logo />
               <p className="mt-2 max-w-sm text-2xs leading-relaxed text-faint">
-                Air quality from the WAQI network and OpenWeatherMap, forecast by
-                AIRS's own model, explained in plain language.
+                Air quality monitored via ground station networks and Copernicus CAMS
+                atmospheric models, with multi-horizon ML forecasting and intervention simulation.
               </p>
             </div>
-            <p className="max-w-md text-2xs leading-relaxed text-faint sm:text-right">
-              Forecasts, source attribution and simulations are model estimates,
-              not guarantees. Health guidance is general public-health information
-              and not medical advice.
-            </p>
+            <div className="flex flex-col gap-1 sm:text-right">
+              <p className="max-w-md text-2xs leading-relaxed text-faint">
+                Data sources: Central Pollution Control Board (CPCB), WAQI, OpenAQ, and Copernicus Atmospheric Monitoring Service (CAMS) via Open-Meteo.
+              </p>
+              <p className="max-w-md text-2xs leading-relaxed text-faint">
+                Forecasts, source attribution and simulations are predictive model estimates. Health guidance is general public-health information and not medical advice.
+              </p>
+            </div>
           </div>
         </div>
       </footer>

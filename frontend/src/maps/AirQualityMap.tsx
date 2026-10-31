@@ -8,14 +8,19 @@ import { compactNumber, num, relativeTime } from '@/lib/format'
 import { useTheme } from '@/lib/theme'
 import type { City, MapPoint } from '@/lib/types'
 
-const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-const ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO'
+const LIGHT_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+const DARK_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+const ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'
 
 function Recenter({ city }: { city: City }) {
   const map = useMap()
   useEffect(() => {
+    map.invalidateSize()
+    const timer = setTimeout(() => {
+      map.invalidateSize()
+    }, 200)
     map.setView([city.latitude, city.longitude], city.default_zoom, { animate: true })
+    return () => clearTimeout(timer)
   }, [city, map])
   return null
 }
@@ -47,7 +52,7 @@ export function AirQualityMap({ city, points, selectedId, onSelect, height = 520
                     zoom={city.default_zoom} scrollWheelZoom
                     style={{ height: '100%', width: '100%' }}>
         <TileLayer key={resolved} url={tiles} attribution={ATTRIBUTION}
-                   maxZoom={19} />
+                   maxNativeZoom={16} maxZoom={19} />
         <Recenter city={city} />
 
         {ordered.map((point) => {

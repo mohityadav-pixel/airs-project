@@ -16,7 +16,7 @@ export function Logo({ size = 30, withWordmark = true }:
         <span className="flex flex-col leading-none">
           <span className="text-base font-semibold tracking-tight text-ink">AIRS</span>
           <span className="mt-0.5 text-[9px] uppercase tracking-[0.18em] text-faint">
-            Air Intelligence
+            Air Quality Intelligence
           </span>
         </span>
       )}

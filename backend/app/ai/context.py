@@ -59,6 +59,21 @@ def build_station_context(db: Session, city: City, station: Station, *,
                  f"Zone type: {station.zone_type.value.replace('_', ' ')}. "
                  f"Population in catchment: {station.population_exposed or 'unknown'}.")
 
+    # The number the dashboard shows for the city. Put it first so the
+    # assistant quotes the same AQI the user is looking at.
+    try:
+        from app.services import live_air
+        live = live_air.city_live(db, city)
+        if live.get("aqi") is not None:
+            kind = {"measured": "OBSERVED"}.get(live.get("source"), "ESTIMATED")
+            facts.append(
+                f"[{kind}] City AQI shown on the dashboard for {city.name}: "
+                f"{live['aqi']} ({(live.get('category') or {}).get('label', '')}). "
+                f"How it was obtained: {live.get('source_label')}. "
+                "Use THIS figure when stating the city's current AQI.")
+    except Exception:                       # never block the assistant on it
+        pass
+
     if reading:
         category = categorize(reading.aqi)
         facts.append(

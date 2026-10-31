@@ -65,7 +65,8 @@ def test_provider_failures_are_recorded_and_cleared():
     ("404 NOT_FOUND", True),
     ("model is deprecated", True),
     ("API key not valid. Please pass a valid API key.", False),
-    ("429 RESOURCE_EXHAUSTED: quota exceeded", False),
+    ("429 RESOURCE_EXHAUSTED: quota exceeded", True),   # quotas are per model
+    ("503 UNAVAILABLE: high demand", True),
     ("Connection timed out", False),
 ])
 def test_model_problems_are_told_apart_from_key_problems(message, expected):

@@ -34,7 +34,7 @@ export function setToken(token: string | null) {
   } catch { /* private mode — session-only auth is acceptable */ }
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken()
   const headers: Record<string, string> = {
     Accept: 'application/json',

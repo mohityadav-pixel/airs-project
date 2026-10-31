@@ -15,7 +15,7 @@ export default function Login() {
 
   if (user) {
     const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-    return <Navigate to={from ?? '/dashboard'} replace />
+    return <Navigate to={from ?? '/'} replace />
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -23,7 +23,8 @@ export default function Login() {
     setBusy(true); setError(null)
     try {
       await login(email, password)
-      navigate('/dashboard', { replace: true })
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+      navigate(from ?? '/', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not sign in.')
     } finally {

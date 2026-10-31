@@ -40,8 +40,8 @@ export default function Simulator() {
   return (
     <>
       <PageHeader
-        title="What-if simulator"
-        description="Model what an intervention would actually achieve at this location — applied only to the share of pollution its source is responsible for."
+        title="Air Quality Intervention Simulator"
+        description="Simulate potential air quality improvements under targeted policy interventions. Scenario estimates are computed from source-apportioned pollutant loads and atmospheric dispersion."
         actions={<><CitySelector /><StationSelector /></>}
       />
 
@@ -136,7 +136,7 @@ export default function Simulator() {
               </p>
               <p className="mt-1.5 max-w-sm text-sm text-muted">
                 Pull a lever on the left and run the simulation. AIRS will split the
-                measured pollution into source shares, apply the lever only to the
+                model-estimated pollution into source shares, apply the lever only to the
                 share it can actually affect, discount it by how well the atmosphere
                 is dispersing right now, and recompute the AQI from the resulting
                 concentrations.
@@ -150,17 +150,26 @@ export default function Simulator() {
             <>
               <div className="card card-pad">
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-ink">
-                    Scenario result — {result.station?.name}
-                  </h2>
+                  <div>
+                    <h2 className="text-sm font-semibold text-ink">
+                      Air Quality Intervention Simulator — {result.station?.name}
+                    </h2>
+                    <p className="mt-0.5 text-2xs text-muted">
+                      Receptor site baseline · Evaluates localized intervention impacts at this urban monitoring location
+                    </p>
+                  </div>
                   <ProvenanceBadge provenance={result.provenance} showSource={false} />
                 </div>
 
                 <div className="mt-4 grid gap-6 sm:grid-cols-[1fr_auto_1fr]
                                 sm:items-center">
                   <div className="text-center">
-                    <p className="label-eyebrow">Current</p>
-                    <AqiGauge aqi={result.baseline.aqi} size={160} label="Measured" />
+                    <p className="label-eyebrow">Station Baseline</p>
+                    <AqiGauge aqi={result.baseline.aqi} size={160}
+                              label={result.provenance?.mode === 'demo' ? 'Receptor Baseline (Demo)' : 'Receptor Baseline'} />
+                    <p className="mt-1 text-2xs text-faint">
+                      Local urban receptor site
+                    </p>
                   </div>
                   <div className="flex flex-col items-center justify-center">
                     <span aria-hidden="true"
@@ -172,12 +181,12 @@ export default function Simulator() {
                         : `${result.deltas.improvement_pct > 0 ? '−' : '+'}${
                             Math.abs(result.deltas.improvement_pct)}%`}
                     </span>
-                    <span className="text-2xs text-faint">AQI</span>
+                    <span className="text-2xs text-faint">AQI Change</span>
                   </div>
                   <div className="text-center">
-                    <p className="label-eyebrow">Simulated</p>
+                    <p className="label-eyebrow">Simulated Outcome</p>
                     <AqiGauge aqi={result.simulated.aqi} size={160}
-                              label="Modelled" />
+                              label="Simulated AQI" />
                   </div>
                 </div>
 
@@ -207,8 +216,8 @@ export default function Simulator() {
 
                 <p className="mt-4 rounded-lg bg-raised px-3 py-2.5 text-2xs
                               leading-relaxed text-muted">
-                  {result.caveat} Confidence {Math.round(result.confidence * 100)}%,
-                  engine {result.engine_version}.
+                  <span className="font-semibold text-ink">Receptor site context: </span>
+                  {result.caveat} Local station baselines reflect street-level urban emission density and microclimates, which can differ from regional background or CAMS atmospheric model grid averages. Confidence {Math.round(result.confidence * 100)}%, engine {result.engine_version}.
                 </p>
               </div>
 

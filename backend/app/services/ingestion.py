@@ -31,6 +31,8 @@ from app.services import validation
 from app.services.providers.demo import (synth_air_quality, synth_traffic,
                                           synth_weather)
 from app.services.providers.openweather import OpenWeatherProvider, ventilation_index
+from app.services.providers.openmeteo import (OpenMeteoAirProvider,
+                                              OpenMeteoWeatherProvider)
 from app.services.providers.waqi import WaqiProvider
 
 logger = get_logger("airs.ingestion")
@@ -39,7 +41,38 @@ AQ_TTL_SECONDS = 600      # WAQI publishes hourly; 10 min is polite and fresh
 WEATHER_TTL_SECONDS = 600
 
 aq_provider = WaqiProvider()
+model_aq_provider = OpenMeteoAirProvider()
 weather_provider = OpenWeatherProvider()
+model_weather_provider = OpenMeteoWeatherProvider()
+
+
+def _measured_or_model(station: Station, city: City):
+    """Nearest real station first; the CAMS model when none is close."""
+    from app.db.india_cities import METRO_RADIUS_KM
+    radius = 8.0 if len(city.stations) > 1 else 15.0
+    if city.slug in METRO_RADIUS_KM and len(city.stations) == 1:
+        radius = METRO_RADIUS_KM[city.slug]
+    errors: list[Exception] = []
+    if aq_provider.available():
+        try:
+            return aq_provider.fetch(station.latitude, station.longitude,
+                                     radius_km=radius)
+        except (ProviderUnavailable, ProviderNotConfigured) as exc:
+            errors.append(exc)
+    try:
+        return model_aq_provider.fetch(station.latitude, station.longitude)
+    except ProviderUnavailable as exc:
+        errors.append(exc)
+    raise errors[0] if errors else ProviderUnavailable()
+
+
+def _weather_any(station: Station):
+    if weather_provider.available():
+        try:
+            return weather_provider.fetch(station.latitude, station.longitude)
+        except (ProviderUnavailable, ProviderNotConfigured):
+            pass
+    return model_weather_provider.fetch(station.latitude, station.longitude)
 
 
 class Resolution:
@@ -64,7 +97,7 @@ def fetch_air_quality(station: Station, city: City) -> tuple[object, str]:
         if cached is not None:
             return cached, Resolution.LIVE
         try:
-            obs = aq_provider.fetch(station.latitude, station.longitude)
+            obs = _measured_or_model(station, city)
             obs = validation.validate_air_quality(obs)
             if not validation.is_usable(obs):
                 raise ProviderUnavailable(
@@ -109,7 +142,7 @@ def fetch_weather(station: Station) -> tuple[object, str]:
         if cached is not None:
             return cached, Resolution.LIVE
         try:
-            obs = weather_provider.fetch(station.latitude, station.longitude)
+            obs = _weather_any(station)
             obs, _ = validation.validate_weather(obs)
             cache.set(key, obs, WEATHER_TTL_SECONDS)
             cache_module.record_success("weather")

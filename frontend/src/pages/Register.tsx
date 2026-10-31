@@ -20,7 +20,7 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (user) return <Navigate to="/dashboard" replace />
+  if (user) return <Navigate to="/" replace />
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,7 +34,7 @@ export default function Register() {
         ...form,
         home_city_slug: form.home_city_slug || undefined,
       })
-      navigate('/dashboard', { replace: true })
+      navigate('/', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not create the account.')
     } finally {

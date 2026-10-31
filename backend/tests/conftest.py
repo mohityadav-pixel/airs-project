@@ -20,6 +20,7 @@ os.environ["AIRS_SECRET_KEY"] = "test-secret-not-a-real-key"
 os.environ["WAQI_TOKEN"] = ""
 os.environ["OPENWEATHER_API_KEY"] = ""
 os.environ["GEMINI_API_KEY"] = ""
+os.environ["OPENAQ_API_KEY"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import select  # noqa: E402

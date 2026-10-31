@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 
 const PROVIDER_LABEL: Record<string, string> = {
-  air_quality: 'Live air quality (WAQI)',
+  air_quality: "The WAQI station feed",
   weather: 'Live weather (OpenWeatherMap)',
   gemini: 'AI assistant (Gemini)',
 }
@@ -22,11 +22,13 @@ export function DataModeBanner() {
   if (!data) return null
 
   const demo = data.data_mode === 'demo'
-  const missing = !data.capabilities.air_quality_provider
-    || !data.capabilities.weather_provider
+  // Only the air-quality feed decides whether the data is "down". A failing
+  // AI assistant is reported by the chat widget itself — it says nothing
+  // about whether the numbers on the page are live.
   const failures = Object.entries(data.provider_failures ?? {})
+    .filter(([k]) => k === 'air_quality')
 
-  if (!demo && !missing && failures.length === 0) return null
+  if (!demo && failures.length === 0) return null
 
   return (
     <div role="status"
@@ -34,7 +36,7 @@ export function DataModeBanner() {
       <div className="mx-auto flex max-w-content flex-col gap-1 text-center
                       sm:flex-row sm:items-center sm:justify-center sm:gap-2">
         <span className="font-bold text-usg">
-          {demo ? 'DEMO DATA' : failures.length ? 'LIVE FEED DOWN' : 'LIMITED DATA'}
+          {demo ? 'DEMO DATA' : 'STATION FEED DOWN'}
         </span>
         <span className="text-muted">
           {demo
@@ -42,10 +44,9 @@ export function DataModeBanner() {
               + 'Set AIRS_DATA_MODE=live with provider keys for real data.'
             : failures.length
               ? `${failures.map(([k]) => PROVIDER_LABEL[k] ?? k).join(' and ')} `
-                + 'is not responding, so AIRS is serving the last data it stored. '
-                + 'Run scripts/check_providers.py to see the reason.'
-              : 'One or more upstream providers are not configured, so parts of '
-                + 'the platform are running on modelled data.'}
+                + 'is not responding, so AIRS is showing the CAMS model and the last '
+                + 'readings it stored. Run scripts/check_providers.py to see why.'
+              : ''}
         </span>
       </div>
     </div>

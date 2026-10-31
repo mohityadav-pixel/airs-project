@@ -21,7 +21,7 @@ logger = get_logger("airs.api")
 limiter = Limiter(key_func=get_remote_address, default_limits=["240/minute"])
 
 DESCRIPTION = """
-**AIRS — AI Response & Intervention System.**
+**AIRS — AI-Based Air Quality Index Prediction and Forecasting System.**
 
 Every data-bearing response carries a `provenance` block declaring what kind of
 value it is — `observed`, `predicted`, `simulated`, `estimated` or
@@ -34,6 +34,8 @@ labelled demo model. Clients are expected to surface that distinction.
 async def lifespan(app: FastAPI):
     configure_logging()
     init_db()
+    from app.services.providers import openaq
+    openaq.start_background()          # station list loads while the app starts
     log_event(logger, 20, "airs_started", data_mode=settings.airs_data_mode,
               environment=settings.airs_env)
     yield
